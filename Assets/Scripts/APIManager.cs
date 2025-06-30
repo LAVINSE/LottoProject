@@ -3,12 +3,9 @@ using System.Collections;
 using System.Diagnostics;
 using UnityEngine;
 using UnityEngine.Networking;
-
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
-
 
 
 #if UNITY_EDITOR
@@ -66,6 +63,36 @@ public class APIManager : SwSingletonScene<APIManager>
         return null;
     }
 
+    [Button("Json 데이터 가져오기 (날짜 단일)")]
+    public LottoData LoadDrawDataByDate(string date)
+    {
+        LottoDataWrapper wrapper = LoadAllSavedData();
+
+        if (wrapper == null)
+            return null;
+
+        if (!DateTime.TryParse(date, out DateTime dateTime))
+        {
+            SwUtilsLog.LogError($"날짜 파싱 실패: {date}");
+            return null;
+        }
+
+        foreach (var data in wrapper.dataList)
+        {
+            if (DateTime.TryParse(data.drwNoDate, out DateTime drawDate))
+            {
+                if (drawDate.Date == dateTime.Date)
+                {
+                    SwUtilsLog.Log($"[{date}] 날짜의 데이터 로드 완료");
+                    return data;
+                }
+            }
+        }
+
+        SwUtilsLog.LogWarning($"[{date}] 날짜의 저장된 데이터가 없습니다.");
+        return null;
+    }
+
     [Button("Json 데이터 가져오기 (범위)")]
     public List<LottoData> LoadDrawDataRange(int startDraw, int endDraw)
     {
@@ -86,6 +113,40 @@ public class APIManager : SwSingletonScene<APIManager>
         result.Sort((a, b) => a.drwNo.CompareTo(b.drwNo));
 
         SwUtilsLog.Log($"{startDraw}-{endDraw}회차 데이터 로드 완료: {result.Count}개");
+        return result;
+    }
+
+    [Button("Json 데이터 가져오기 (날짜 범위)")]
+    public List<LottoData> LoadDrawDataByDateRange(string startDateStr, string endDateStr)
+    {
+        LottoDataWrapper wrapper = LoadAllSavedData();
+        List<LottoData> result = new();
+
+        if (wrapper == null)
+            return null;
+
+        if (!DateTime.TryParse(startDateStr, out DateTime startDate) ||
+            !DateTime.TryParse(endDateStr, out DateTime endDate))
+        {
+            SwUtilsLog.LogError($"날짜 파싱 실패: {startDateStr} ~ {endDateStr}");
+            return null;
+        }
+
+        foreach (var data in wrapper.dataList)
+        {
+            if (DateTime.TryParse(data.drwNoDate, out DateTime drawDate))
+            {
+                if (drawDate >= startDate && drawDate <= endDate)
+                {
+                    result.Add(data);
+                }
+            }
+        }
+
+        // 날짜순 정렬
+        result.Sort((a, b) => DateTime.Parse(a.drwNoDate).CompareTo(DateTime.Parse(b.drwNoDate)));
+
+        SwUtilsLog.Log($"{startDateStr} ~ {endDateStr} 범위 로드 완료: {result.Count}개");
         return result;
     }
 

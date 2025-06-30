@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class SwUtilsTriggerDispatcher : MonoBehaviour
 {
-    #region ÇÁ·ÎÆÛÆ¼
+    #region ë³€ìˆ˜
     public System.Action<SwUtilsTriggerDispatcher, Collider> EnterCallback { get; set; } = null;
     public System.Action<SwUtilsTriggerDispatcher, Collider> StayCallback { get; set; } = null;
     public System.Action<SwUtilsTriggerDispatcher, Collider> ExitCallback { get; set; } = null;
@@ -12,43 +12,44 @@ public class SwUtilsTriggerDispatcher : MonoBehaviour
     public System.Action<SwUtilsTriggerDispatcher, Collider2D> Enter2DCallback { get; set; } = null;
     public System.Action<SwUtilsTriggerDispatcher, Collider2D> Stay2DCallback { get; set; } = null;
     public System.Action<SwUtilsTriggerDispatcher, Collider2D> Exit2DCallback { get; set; } = null;
-    #endregion // ÇÁ·ÎÆÛÆ¼
+    #endregion // ë³€ìˆ˜
 
-    #region ÇÔ¼ö
-    /** Á¢ÃËÀÌ ½ÃÀÛ µÇ¾úÀ» °æ¿ì */
+
+    #region í•¨ìˆ˜
+    /** 3D íŠ¸ë¦¬ê±° ì ‘ì´‰í–ˆì„ë•Œ */
     public void OnTriggerEnter(Collider collider)
     {
         this.EnterCallback?.Invoke(this, collider);
     }
 
-    /** Á¢ÃËÀÌ ÁøÇà Áß ÀÏ °æ¿ì */
+    /** 3D íŠ¸ë¦¬ê±° ì ‘ì´‰ì¤‘ì¼ë•Œ */
     public void OnTriggerStay(Collider collider)
     {
         this.StayCallback?.Invoke(this, collider);
     }
 
-    /** Á¢ÃËÀÌ Á¾·á µÇ¾úÀ» °æ¿ì */
+    /** 3D íŠ¸ë¦¬ê±° ì ‘ì´‰ëë‚¬ì„ë•Œ */
     public void OnTriggerExit(Collider collider)
     {
         this.ExitCallback?.Invoke(this, collider);
     }
 
-    /** Á¢ÃËÀÌ ½ÃÀÛ µÇ¾úÀ» °æ¿ì */
+    /** 2D íŠ¸ë¦¬ê±° ì ‘ì´‰í–ˆì„ë•Œ*/
     public void OnTriggerEnter2D(Collider2D collider2D)
     {
         this.Enter2DCallback?.Invoke(this, collider2D);
     }
 
-    /** Á¢ÃËÀÌ ÁøÇà Áß ÀÏ °æ¿ì */
+    /** 2D íŠ¸ë¦¬ê±° ì ‘ì´‰ì¤‘ì¼ë•Œ */
     public void OnTriggerStay2D(Collider2D collider2D)
     {
         this.Stay2DCallback?.Invoke(this, collider2D);
     }
 
-    /** Á¢ÃËÀÌ Á¾·á µÇ¾úÀ» °æ¿ì */
+    /** 2D íŠ¸ë¦¬ê±° ì ‘ì´‰ëë‚¬ì„ë•Œ */
     public void OnTriggerExit2D(Collider2D collider2D)
     {
         this.Exit2DCallback?.Invoke(this, collider2D);
     }
-    #endregion // ÇÔ¼ö
+    #endregion // í•¨ìˆ˜
 }

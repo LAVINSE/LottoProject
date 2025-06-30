@@ -2,20 +2,22 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements.Experimental;
 
 public class SlotContainer : MonoBehaviour
 {
+    [SerializeField, ReadOnly] private int slotContainerIndex;
+    [SerializeField, ReadOnly] private int result;
     [SerializeField] private GameObject slotPrefab;
     [SerializeField] private int index = 0;
     [SerializeField] private List<Slot> SlotList = new();
-    [SerializeField] private int result;
-    [SerializeField] private int rotationCount;
+    
+    [SerializeField, ReadOnly] private int rotationCount;
 
     [Space]
     [SerializeField] private float spinSpeed = 1000f;       // 회전 속도
     [SerializeField] private float spinningTime = 2f;       // 최소 회전 시간
-    [SerializeField] private float slowdownRate = 0.95f;    // 감속 비율
-    [SerializeField] private float finalMoveSpeed = 50f;    // 최종 정렬 속도
+    [SerializeField] private float finalMoveSpeed = 1000f;    // 최종 정렬 속도
     [SerializeField] private float stopThreshold = 0.1f;
 
     private bool isSpinning = false;
@@ -24,68 +26,24 @@ public class SlotContainer : MonoBehaviour
     private bool lastResetState = false;
     // 마지막 회전때 결과값이 포함된 슬롯들을 가지고 있고, 해당 인덱스 위치로 천천히 이동
 
+    #region 프로퍼티
+    public int SlotContainerIndex
+    {
+        get => slotContainerIndex;
+        set => slotContainerIndex = Mathf.Max(value, 0);
+    }
+
+    public int Result
+    {
+        get => result;
+        set => result = Mathf.Clamp(value, 1, 46);
+    }
+    #endregion // 프로퍼티
+
     #region 함수 
-    [Button]
-    public void CreateSlot(int createCount = 5)
-    {
-        foreach (var slot in SlotList)
-        {
-            if (slot == null)
-                continue;
-            DestroyImmediate(slot.gameObject);
-        }
-
-        SlotList.Clear();
-
-        for (int i = 0; i < createCount; i++)
-        {
-            Slot slot = SwUtilsFactory.CreateCloneGameObj<Slot>("Slot", slotPrefab, this.gameObject, Vector3.zero, Vector3.one, Vector3.zero);
-
-            SlotList.Add(slot);
-        }
-    }
-
-    [Button]
-    public void SetHeight()
-    {
-        float height = 0;
-        float width = 0;
-        foreach (var slot in SlotList)
-        {
-            height += slot.GetComponent<RectTransform>().rect.height;
-            width = slot.GetComponent<RectTransform>().rect.width;
-        }
-
-        this.GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
-    }
-
-    [Button]
-    public void SetPosY()
+    private void SetIndexPosY(int index)
     {
         this.GetComponent<RectTransform>().anchoredPosition = GetResultSlotPos(index);
-    }
-
-    [Button]
-    public void SetVertical()
-    {
-        int count = SlotList.Count;
-        float slotHeight = SlotList.FirstOrDefault().GetComponent<RectTransform>().rect.height;
-
-        float totalHeight = count * slotHeight + (count - 1) * 0;
-        float startY = totalHeight / 2f - slotHeight / 2f;
-
-        for (int i = 0; i < count; i++)
-        {
-            RectTransform slot = SlotList[i].GetComponent<RectTransform>();
-            slot.anchorMin = new Vector2(0.5f, 0.5f);
-            slot.anchorMax = new Vector2(0.5f, 0.5f);
-            slot.pivot = new Vector2(0.5f, 0.5f);
-            slot.localScale = Vector3.one;
-
-            float y = startY - i * (slotHeight);
-            slot.anchoredPosition = new Vector2(0f, y);
-
-        }
     }
     #endregion // 함수
 
@@ -137,7 +95,7 @@ public class SlotContainer : MonoBehaviour
     {
         foreach (var slot in SlotList)
         {
-            slot.SetText(Random.Range(1, 51));
+            slot.SetText(Random.Range(1, 46));
         }
     }
 
@@ -148,7 +106,7 @@ public class SlotContainer : MonoBehaviour
         for (int i = 0; i < SlotList.Count; i++)
         {
             Slot slot = SlotList[i];
-            
+
             if (i == randomSlotIndex)
             {
                 slot.SetText(result);
@@ -179,27 +137,25 @@ public class SlotContainer : MonoBehaviour
         return false;
     }
 
-    [Button]
-    private void Move()
+    public void Move(float stopDelay)
     {
         if (!isSpinning)
         {
-            StartCoroutine(MoveContainer());
+            StartCoroutine(MoveContainer(stopDelay));
         }
     }
 
     [Button]
     private void Stop()
     {
-        StopCoroutine(MoveContainer());
+        StopCoroutine(MoveContainer(0));
     }
 
-    private IEnumerator MoveContainer()
+    private IEnumerator MoveContainer(float stopDelay)
     {
         isSpinning = true;
 
-        // 마지막 위치에서 시작
-        SetPosY();
+        SetIndexPosY(index);
 
         // 초기에 랜덤 번호 설정
         AllSlotRandomSetNumber();
@@ -209,7 +165,9 @@ public class SlotContainer : MonoBehaviour
 
         // 최소 회전 시간 동안 빠르게 회전
         float spinTimer = 0;
-        while (spinTimer < spinningTime)
+        float localSpinTime = spinningTime + stopDelay;
+
+        while (spinTimer < localSpinTime)
         {
             // 컨테이너를 아래로 이동시켜 회전 효과를 만듦
             MoveContainerDown();
@@ -260,13 +218,13 @@ public class SlotContainer : MonoBehaviour
 
         while (Vector3.Distance(GetComponent<RectTransform>().anchoredPosition, targetPosition) > stopThreshold)
         {
-                // 목표 위치로 천천히 이동
-                GetComponent<RectTransform>().anchoredPosition = Vector3.MoveTowards(
-                    GetComponent<RectTransform>().anchoredPosition,
-                    targetPosition,
-                    finalMoveSpeed * Time.deltaTime
-                );
-                yield return null;
+            // 목표 위치로 천천히 이동
+            GetComponent<RectTransform>().anchoredPosition = Vector3.MoveTowards(
+                GetComponent<RectTransform>().anchoredPosition,
+                targetPosition,
+                finalMoveSpeed * Time.deltaTime
+            );
+            yield return null;
         }
 
         // 정확한 위치에 설정
@@ -291,4 +249,82 @@ public class SlotContainer : MonoBehaviour
         // 업데이트된 위치 적용
         rectTransform.anchoredPosition = currentPos;
     }
+
+    #region 유틸
+#if UNITY_EDITOR
+    [Button]
+    private void MoveTest()
+    {
+        Move(0);
+    }
+
+    [Button]
+    private void CreateSlot(int createCount = 5)
+    {
+        foreach (var slot in SlotList)
+        {
+            if (slot == null)
+                continue;
+            DestroyImmediate(slot.gameObject);
+        }
+
+        SlotList.Clear();
+
+        for (int i = 0; i < createCount; i++)
+        {
+            Slot slot = SwUtilsFactory.CreateCloneGameObj<Slot>("Slot", slotPrefab, this.gameObject, Vector3.zero, Vector3.one, Vector3.zero);
+
+            SlotList.Add(slot);
+        }
+    }
+
+    [Button]
+    private void SetHeight()
+    {
+        float height = 0;
+        float width = 0;
+        foreach (var slot in SlotList)
+        {
+            height += slot.GetComponent<RectTransform>().rect.height;
+            width = slot.GetComponent<RectTransform>().rect.width;
+        }
+
+        this.GetComponent<RectTransform>().sizeDelta = new Vector2(width, height);
+    }
+
+    [Button]
+    private void SetPosY(int index)
+    {
+        SetIndexPosY(index);
+    }
+
+    [Button]
+    private void SetPosCenterY()
+    {
+        this.GetComponent<RectTransform>().anchoredPosition = new Vector2(0, 0);
+    }
+    [Button]
+    private void SetVertical()
+    {
+        int count = SlotList.Count;
+        float slotHeight = SlotList.FirstOrDefault().GetComponent<RectTransform>().rect.height;
+
+        float totalHeight = count * slotHeight + (count - 1) * 0;
+        float startY = totalHeight / 2f - slotHeight / 2f;
+
+        for (int i = 0; i < count; i++)
+        {
+            RectTransform slot = SlotList[i].GetComponent<RectTransform>();
+            slot.anchorMin = new Vector2(0.5f, 0.5f);
+            slot.anchorMax = new Vector2(0.5f, 0.5f);
+            slot.pivot = new Vector2(0.5f, 0.5f);
+            slot.localScale = Vector3.one;
+
+            float y = startY - i * (slotHeight);
+            slot.anchoredPosition = new Vector2(0f, y);
+
+        }
+    }
+#endif // UNITY_EDITOR
+    #endregion // 유틸
 }
