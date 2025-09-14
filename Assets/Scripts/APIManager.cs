@@ -150,6 +150,67 @@ public class APIManager : SwSingletonScene<APIManager>
         return result;
     }
 
+    [Button("Json 데이터 가져오기 (범위) - 마지막 데이터")]
+    public List<LottoData> LoadDrawDataRange(int startDraw)
+    {
+        LottoDataWrapper wrapper = LoadAllSavedData();
+        List<LottoData> result = new();
+
+        if (wrapper == null) return result;
+
+        int lastDrawNo = wrapper.dataList.LastOrDefault().drwNo;
+
+        foreach (var data in wrapper.dataList)
+        {
+            if (data.drwNo >= startDraw && data.drwNo <= lastDrawNo)
+            {
+                result.Add(data);
+            }
+        }
+
+        // 회차 순으로 정렬
+        result.Sort((a, b) => a.drwNo.CompareTo(b.drwNo));
+
+        SwUtilsLog.Log($"{startDraw}-{lastDrawNo}회차 데이터 로드 완료: {result.Count}개");
+        return result;
+    }
+
+    [Button("Json 데이터 가져오기 (날짜 범위) - 마지막 데이터")]
+    public List<LottoData> LoadDrawDataByDateRange(string startDateStr)
+    {
+        LottoDataWrapper wrapper = LoadAllSavedData();
+        List<LottoData> result = new();
+
+        if (wrapper == null)
+            return null;
+
+        string lastData = wrapper.dataList.LastOrDefault().drwNoDate;
+
+        if (!DateTime.TryParse(startDateStr, out DateTime startDate) ||
+            !DateTime.TryParse(lastData, out DateTime endDate))
+        {
+            SwUtilsLog.LogError($"날짜 파싱 실패: {startDateStr} ~ {lastData}");
+            return null;
+        }
+
+        foreach (var data in wrapper.dataList)
+        {
+            if (DateTime.TryParse(data.drwNoDate, out DateTime drawDate))
+            {
+                if (drawDate >= startDate && drawDate <= endDate)
+                {
+                    result.Add(data);
+                }
+            }
+        }
+
+        // 날짜순 정렬
+        result.Sort((a, b) => DateTime.Parse(a.drwNoDate).CompareTo(DateTime.Parse(b.drwNoDate)));
+
+        SwUtilsLog.Log($"{startDateStr} ~ {lastData} 범위 로드 완료: {result.Count}개");
+        return result;
+    }
+
     private IEnumerator GetAPILoadDataRoutine(Action onComplete, Action<string> onError)
     {
 #if UNITY_EDITOR

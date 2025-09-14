@@ -29,17 +29,14 @@ public class SafeAreaHandler : MonoBehaviour
         rectTransform.anchorMin = anchorMin;
         rectTransform.anchorMax = anchorMax;
 
-#if UNITY_EDITOR
         UnityEditor.EditorUtility.SetDirty(this);
         UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
-#endif // UNITY_EDITOR
     }
     #endregion // 함수
 
     #region 유틸 및 편의성
-#if UNITY_EDITOR
     /** 기본 구역에 UI를 배치한다 */
-    [Button]
+    [ContextMenu("BaseArea")]
     private void BaseArea()
     {
         UnityEditor.Undo.RecordObject(this, "BaseArea");
@@ -49,6 +46,5 @@ public class SafeAreaHandler : MonoBehaviour
         UnityEditor.EditorUtility.SetDirty(this);
         UnityEditor.PrefabUtility.RecordPrefabInstancePropertyModifications(this);
     }
-#endif // UNITY_EDITOR
     #endregion // 유틸 및 편의성
 }
